@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KV 管理器</title>
+<style>
+  *{box-sizing:border-box;font-family:system-ui,sans-serif}
+  body{max-width:900px;margin:2rem auto;padding:0 1rem;background:#f7f9fc}
+  .card{background:#fff;padding:1.2rem 1.5rem;border-radius:12px;box-shadow:0 2px 10px #0001;margin-bottom:1rem}
+  .form-group{margin-bottom:1rem}
+  label{display:block;margin-bottom:5px;font-weight:600}
+  input,textarea{width:100%;padding:10px;border:1px solid #ddd;border-radius:6px}
+  textarea{min-height:120px;resize:vertical}
+  .btn{padding:10px 14px;border:none;border-radius:6px;cursor:pointer;margin-right:8px;margin-bottom:8px}
+  .btn-primary{background:#007bff;color:#fff}
+  .btn-success{background:#28a745;color:#fff}
+  .btn-danger{background:#dc3545;color:#fff}
+  .kv-item{padding:12px;border:1px solid #eee;border-radius:8px;margin-bottom:10px}
+  .kv-key{font-weight:bold;color:#007bff;margin-bottom:6px;word-break:break-all}
+  .kv-value{background:#f1f3f5;padding:8px;border-radius:4px;margin-bottom:10px;white-space:pre-wrap}
+</style>
+
+<div class="card">
+  <h3>🔐 Cloudflare KV 凭据</h3>
+  <div class="form-group"><label>Account ID</label><input id="accountId"></div>
+  <div class="form-group"><label>API Token</label><input id="apiToken"></div>
+  <div class="form-group"><label>KV Namespace ID</label><input id="namespaceId"></div>
+</div>
+
+<div class="card">
+  <div class="form-group"><label>Key</label><input id="key"></div>
+  <div class="form-group"><label>Value</label><textarea id="value"></textarea></div>
+  <button class="btn btn-success" onclick="save()">保存/更新</button>
+  <button class="btn btn-primary" onclick="get()">获取</button>
+  <button class="btn btn-primary" onclick="listAll()">列出全部</button>
+</div>
+
+<div class="card" id="list"></div>
+
+<script>
+const api = '/api/kv';
+function cfg(){
+  const a=document.getElementById('accountId').value,t=document.getElementById('apiToken').value,n=document.getElementById('namespaceId').value;
+  if(!a||!t||!n){alert('请填完3个凭据');return null}
+  return {accountId:a,apiToken:t,namespaceId:n};
+}
+
+async function save(){
+  const c=cfg(),k=document.getElementById('key').value,v=document.getElementById('value').value;
+  if(!c||!k||!v)return;
+  const r=await fetch(api,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({...c,key:k,value:v})});
+  alert((await r.json()).success?'成功':'失败');
+  listAll();
+}
+
+async function get(){
+  const c=cfg(),k=document.getElementById('key').value;
+  if(!c||!k)return;
+  const r=await fetch(`${api}?key=${encodeURIComponent(k)}`,{method:'GET',headers:{'Content-Type':'application/json'},body:JSON.stringify(c)});
+  const d=await r.json();
+  document.getElementById('value').value=d.value??'未找到';
+}
+
+async function listAll(){
+  const c=cfg();if(!c)return;
+  document.getElementById('list').innerHTML='加载中...';
+  const r=await fetch(api,{method:'GET',headers:{'Content-Type':'application/json'},body:JSON.stringify(c)});
+  const d=await r.json();
+  const container=document.getElementById('list');container.innerHTML='';
+  for(const keyInfo of d.result||[]){
+    const key=keyInfo.name;
+    const rv=await fetch(`${api}?key=${encodeURIComponent(key)}`,{method:'GET',headers:{'Content-Type':'application/json'},body:JSON.stringify(c)});
+    const {value}=await rv.json();
+    const div=document.createElement('div');div.className='kv-item';
+    div.innerHTML=`
+      <div class="kv-key">${key}</div>
+      <div class="kv-value">${value??''}</div>
+      <button class="btn btn-primary" onclick="edit('${key.replace(/'/g,'\\\'')}',\`${value?.replace(/`/g,'\\`')??''}\`)">编辑</button>
+      <button class="btn btn-danger" onclick="del('${key.replace(/'/g,'\\\'')}')">删除</button>
+    `;
+    container.appendChild(div);
+  }
+}
+
+async function del(key){
+  if(!confirm('确定删除？'))return;
+  const c=cfg();if(!c)return;
+  await fetch(`${api}?key=${encodeURIComponent(key)}`,{method:'DELETE',headers:{'Content-Type':'application/json'},body:JSON.stringify(c)});
+  listAll();
+}
+
+function edit(k,v){
+  document.getElementById('key').value=k;
+  document.getElementById('value').value=v;
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+</script>
