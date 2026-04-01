@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Cloudflare KV 管理器</title>
+  <title>KV 管理器</title>
   <link rel="stylesheet" href="https://cdn.bootcdn.net/ajax/libs/layui/2.9.10/css/layui.css">
 </head>
 <body class="layui-container" style="margin-top:30px">
@@ -16,19 +16,19 @@
         <div class="layui-inline">
           <label class="layui-form-label">Account ID</label>
           <div class="layui-input-inline">
-            <input type="text" id="accountId" lay-verify="required" class="layui-input">
+            <input type="text" id="accountId" class="layui-input">
           </div>
         </div>
         <div class="layui-inline">
           <label class="layui-form-label">API Token</label>
           <div class="layui-input-inline">
-            <input type="text" id="apiToken" lay-verify="required" class="layui-input">
+            <input type="text" id="apiToken" class="layui-input">
           </div>
         </div>
         <div class="layui-inline">
           <label class="layui-form-label">Namespace ID</label>
           <div class="layui-input-inline">
-            <input type="text" id="namespaceId" lay-verify="required" class="layui-input">
+            <input type="text" id="namespaceId" class="layui-input">
           </div>
         </div>
         <div class="layui-inline">
@@ -45,19 +45,18 @@
   </div>
 </div>
 
-<!-- 编辑弹窗 -->
 <script type="text/html" id="editTpl">
   <div class="layui-form" style="padding:20px">
     <div class="layui-form-item">
       <label class="layui-form-label">Key</label>
       <div class="layui-input-block">
-        <input type="text" name="key" id="edit-key" readonly class="layui-input">
+        <input type="text" id="edit-key" readonly class="layui-input">
       </div>
     </div>
     <div class="layui-form-item">
       <label class="layui-form-label">Value</label>
       <div class="layui-input-block">
-        <textarea name="value" id="edit-value" class="layui-textarea" style="min-height:200px"></textarea>
+        <textarea id="edit-value" class="layui-textarea" style="min-height:220px"></textarea>
       </div>
     </div>
   </div>
@@ -76,81 +75,102 @@ layui.use(['table','layer','form'], function(){
     const a = document.getElementById('accountId').value.trim();
     const t = document.getElementById('apiToken').value.trim();
     const n = document.getElementById('namespaceId').value.trim();
-    if(!a||!t||!n){layer.msg('请填写完整配置');return null;}
+    if (!a || !t || !n) {
+      layer.msg('请填写完整配置');
+      return null;
+    }
     return `accountId=${encodeURIComponent(a)}&apiToken=${encodeURIComponent(t)}&namespaceId=${encodeURIComponent(n)}`;
   }
 
-  // 加载列表（前20条）
-  form.on('submit(load)', async function(){
+  // 加载列表（修复版）
+  form.on('submit(load)', async function (opt) {
+    opt.preventDefault();
     const auth = getAuth();
-    if(!auth) return;
+    if (!auth) return;
 
     layer.load(2);
-    const res = await fetch(`${API}?${auth}`);
-    const data = await res.json();
-    layer.closeAll('loading');
+    try {
+      const res = await fetch(`${API}?${auth}`);
+      const data = await res.json();
 
-    const rows = [];
-    for(const item of (data.result||[])){
-      const r = await fetch(`${API}?${auth}&key=${encodeURIComponent(item.name)}`);
-      const { value } = await r.json();
-      rows.push({ name: item.name, value: value||'' });
+      const rows = [];
+      for (const item of (data.result || [])) {
+        try {
+          const valRes = await fetch(`${API}?${auth}&key=${encodeURIComponent(item.name)}`);
+          const valData = await valRes.json();
+          rows.push({
+            name: item.name,
+            value: valData.value || ''
+          });
+        } catch (e) {}
+      }
+
+      table.render({
+        elem: '#table',
+        data: rows,
+        limit: 20,
+        cols: [[
+          { field: 'name', title: 'Key', minWidth: 200 },
+          { field: 'value', title: 'Value', minWidth: 450 },
+          {
+            title: '操作', toolbar: `
+              <a class="layui-btn layui-btn-xs" lay-event="edit">编辑</a>
+              <a class="layui-btn layui-btn-danger layui-btn-xs" lay-event="del">删除</a>
+            `
+          }
+        ]]
+      });
+
+    } catch (e) {
+      layer.msg('加载失败：' + e.message);
     }
-
-    table.render({
-      elem: '#table',
-      cols: [[
-        {field:'name',title:'Key',minWidth:200},
-        {field:'value',title:'Value',minWidth:400},
-        {title:'操作',toolbar:'<div><a class="layui-btn layui-btn-xs" lay-event="edit">编辑</a><a class="layui-btn layui-btn-danger layui-btn-xs" lay-event="del">删除</a></div>'}
-      ]],
-      data: rows,
-      limit: 20
-    });
+    layer.closeAll('loading');
   });
 
-  // 工具条事件
-  table.on('tool(table)', function(obj){
+  // 编辑
+  table.on('tool(table)', function (obj) {
     const data = obj.data;
-    if(obj.event === 'edit'){
-      // 编辑弹窗
+
+    if (obj.event === 'edit') {
       layer.open({
-        type:1,
-        title:'编辑 KV',
-        area:['700px','400px'],
+        type: 1,
+        title: '编辑 KV',
+        area: ['750px', '480px'],
         content: document.getElementById('editTpl').innerHTML,
-        success: function(){
+        success: function () {
           document.getElementById('edit-key').value = data.name;
           document.getElementById('edit-value').value = data.value;
         },
-        btn:['保存'],
-        yes: async function(){
+        btn: ['保存'],
+        yes: async function (index) {
           const auth = getAuth();
           const key = data.name;
           const value = document.getElementById('edit-value').value.trim();
-          if(!value)return layer.msg('value不能为空');
+          if (!value) return layer.msg('Value 不能为空');
 
-          const res = await fetch(API,{
-            method:'POST',
-            headers:{'Content-Type':'application/json'},
-            body:JSON.stringify({key,value})
+          const res = await fetch(API, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ key, value })
           });
           const d = await res.json();
-          if(d.success){
+
+          if (d.success) {
             layer.msg('保存成功');
-            layer.closeAll();
+            layer.close(index);
             form.submit('load');
-          }else{
+          } else {
             layer.msg('保存失败');
           }
         }
       });
     }
 
-    if(obj.event === 'del'){
-      layer.confirm('确定删除？', async function(){
+    // 删除
+    if (obj.event === 'del') {
+      layer.confirm('确定删除？', async function () {
         const auth = getAuth();
-        await fetch(`${API}?${auth}&key=${encodeURIComponent(data.name)}`,{method:'DELETE'});
+        await fetch(`${API}?${auth}&key=${encodeURIComponent(data.name)}`, { method: 'DELETE' });
         layer.msg('删除成功');
         form.submit('load');
       });
