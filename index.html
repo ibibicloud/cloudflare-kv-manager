@@ -1,122 +1,162 @@
 <!DOCTYPE html>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Cloudflare KV 管理器</title>
-<style>
-  *{box-sizing:border-box;font-family:system-ui,sans-serif}
-  body{max-width:900px;margin:2rem auto;padding:0 1rem;background:#f7f9fc}
-  .card{background:#fff;padding:1.2rem 1.5rem;border-radius:12px;box-shadow:0 2px 10px #0001;margin-bottom:1rem}
-  .form-group{margin-bottom:1rem}
-  label{display:block;margin-bottom:5px;font-weight:600}
-  input,textarea{width:100%;padding:10px;border:1px solid #ddd;border-radius:6px}
-  textarea{min-height:120px;resize:vertical}
-  .btn{padding:10px 14px;border:none;border-radius:6px;cursor:pointer;margin-right:8px;margin-bottom:8px}
-  .btn-primary{background:#007bff;color:#fff}
-  .btn-success{background:#28a745;color:#fff}
-  .btn-danger{background:#dc3545;color:#fff}
-  .kv-item{padding:12px;border:1px solid #eee;border-radius:8px;margin-bottom:10px}
-  .kv-key{font-weight:bold;color:#007bff;margin-bottom:6px;word-break:break-all}
-  .kv-value{background:#f1f3f5;padding:8px;border-radius:4px;margin-bottom:10px;white-space:pre-wrap}
-</style>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cloudflare KV 管理器</title>
+  <link rel="stylesheet" href="https://cdn.bootcdn.net/ajax/libs/layui/2.9.10/css/layui.css">
+</head>
+<body class="layui-container" style="margin-top:30px">
 
-<div class="card">
-  <h3>🔐 Cloudflare KV 凭据</h3>
-  <div class="form-group"><label>Account ID</label><input id="accountId"></div>
-  <div class="form-group"><label>API Token</label><input id="apiToken"></div>
-  <div class="form-group"><label>KV Namespace ID</label><input id="namespaceId"></div>
+<div class="layui-card">
+  <div class="layui-card-header">Cloudflare KV 配置</div>
+  <div class="layui-card-body">
+    <form class="layui-form" lay-filter="config">
+      <div class="layui-form-item">
+        <div class="layui-inline">
+          <label class="layui-form-label">Account ID</label>
+          <div class="layui-input-inline">
+            <input type="text" id="accountId" lay-verify="required" class="layui-input">
+          </div>
+        </div>
+        <div class="layui-inline">
+          <label class="layui-form-label">API Token</label>
+          <div class="layui-input-inline">
+            <input type="text" id="apiToken" lay-verify="required" class="layui-input">
+          </div>
+        </div>
+        <div class="layui-inline">
+          <label class="layui-form-label">Namespace ID</label>
+          <div class="layui-input-inline">
+            <input type="text" id="namespaceId" lay-verify="required" class="layui-input">
+          </div>
+        </div>
+        <div class="layui-inline">
+          <button class="layui-btn" lay-submit lay-filter="load">加载列表</button>
+        </div>
+      </div>
+    </form>
+  </div>
 </div>
 
-<div class="card">
-  <div class="form-group"><label>Key</label><input id="key"></div>
-  <div class="form-group"><label>Value</label><textarea id="value"></textarea></div>
-  <button class="btn btn-success" onclick="save()">保存/更新</button>
-  <button class="btn btn-primary" onclick="get()">获取</button>
-  <button class="btn btn-primary" onclick="listAll()">列出全部</button>
+<div class="layui-card">
+  <div class="layui-card-body">
+    <table id="table" lay-filter="table"></table>
+  </div>
 </div>
 
-<div class="card" id="list"></div>
-
-<script>
-const API = '/api/kv';
-
-function getAuthParams() {
-  const a = document.getElementById('accountId').value.trim();
-  const t = document.getElementById('apiToken').value.trim();
-  const n = document.getElementById('namespaceId').value.trim();
-  if (!a || !t || !n) { alert('请填完3个凭据'); return null; }
-  return `accountId=${encodeURIComponent(a)}&apiToken=${encodeURIComponent(t)}&namespaceId=${encodeURIComponent(n)}`;
-}
-
-// 保存
-async function save() {
-  const auth = getAuthParams();
-  const k = document.getElementById('key').value.trim();
-  const v = document.getElementById('value').value.trim();
-  if (!auth || !k || !v) return;
-
-  const res = await fetch(API, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ key: k, value: v })
-  });
-  const data = await res.json();
-  alert(data.success ? '✅ 保存成功' : '❌ 失败');
-  listAll();
-}
-
-// 获取单个
-async function get() {
-  const auth = getAuthParams();
-  const k = document.getElementById('key').value.trim();
-  if (!auth || !k) return;
-
-  const res = await fetch(`${API}?${auth}&key=${encodeURIComponent(k)}`);
-  const data = await res.json();
-  document.getElementById('value').value = data.value ?? '未找到';
-}
-
-// 列出所有
-async function listAll() {
-  const auth = getAuthParams();
-  if (!auth) return;
-  const container = document.getElementById('list');
-  container.innerHTML = '加载中...';
-
-  const res = await fetch(`${API}?${auth}`);
-  const data = await res.json();
-  container.innerHTML = '';
-
-  for (const keyInfo of data.result || []) {
-    const key = keyInfo.name;
-    const valRes = await fetch(`${API}?${auth}&key=${encodeURIComponent(key)}`);
-    const { value } = await valRes.json();
-
-    const div = document.createElement('div');
-    div.className = 'kv-item';
-    div.innerHTML = `
-      <div class="kv-key">${key}</div>
-      <div class="kv-value">${value ?? ''}</div>
-      <button class="btn btn-primary" onclick="edit('${key.replace(/'/g, '\\\'')}', \`${(value ?? '').replace(/`/g, '\\`')}\`)">编辑</button>
-      <button class="btn btn-danger" onclick="del('${key.replace(/'/g, '\\\'')}')">删除</button>
-    `;
-    container.appendChild(div);
-  }
-}
-
-// 删除
-async function del(key) {
-  if (!confirm('确定删除？')) return;
-  const auth = getAuthParams();
-  if (!auth) return;
-
-  await fetch(`${API}?${auth}&key=${encodeURIComponent(key)}`, { method: 'DELETE' });
-  listAll();
-}
-
-// 编辑回填
-function edit(k, v) {
-  document.getElementById('key').value = k;
-  document.getElementById('value').value = v;
-  window.scrollTo({ top: 0, behavior: 'smooth' });
-}
+<!-- 编辑弹窗 -->
+<script type="text/html" id="editTpl">
+  <div class="layui-form" style="padding:20px">
+    <div class="layui-form-item">
+      <label class="layui-form-label">Key</label>
+      <div class="layui-input-block">
+        <input type="text" name="key" id="edit-key" readonly class="layui-input">
+      </div>
+    </div>
+    <div class="layui-form-item">
+      <label class="layui-form-label">Value</label>
+      <div class="layui-input-block">
+        <textarea name="value" id="edit-value" class="layui-textarea" style="min-height:200px"></textarea>
+      </div>
+    </div>
+  </div>
 </script>
+
+<script src="https://cdn.bootcdn.net/ajax/libs/layui/2.9.10/layui.js"></script>
+<script>
+layui.use(['table','layer','form'], function(){
+  const table = layui.table;
+  const layer = layui.layer;
+  const form = layui.form;
+  const API = '/api/kv';
+
+  // 获取认证参数
+  function getAuth() {
+    const a = document.getElementById('accountId').value.trim();
+    const t = document.getElementById('apiToken').value.trim();
+    const n = document.getElementById('namespaceId').value.trim();
+    if(!a||!t||!n){layer.msg('请填写完整配置');return null;}
+    return `accountId=${encodeURIComponent(a)}&apiToken=${encodeURIComponent(t)}&namespaceId=${encodeURIComponent(n)}`;
+  }
+
+  // 加载列表（前20条）
+  form.on('submit(load)', async function(){
+    const auth = getAuth();
+    if(!auth) return;
+
+    layer.load(2);
+    const res = await fetch(`${API}?${auth}`);
+    const data = await res.json();
+    layer.closeAll('loading');
+
+    const rows = [];
+    for(const item of (data.result||[])){
+      const r = await fetch(`${API}?${auth}&key=${encodeURIComponent(item.name)}`);
+      const { value } = await r.json();
+      rows.push({ name: item.name, value: value||'' });
+    }
+
+    table.render({
+      elem: '#table',
+      cols: [[
+        {field:'name',title:'Key',minWidth:200},
+        {field:'value',title:'Value',minWidth:400},
+        {title:'操作',toolbar:'<div><a class="layui-btn layui-btn-xs" lay-event="edit">编辑</a><a class="layui-btn layui-btn-danger layui-btn-xs" lay-event="del">删除</a></div>'}
+      ]],
+      data: rows,
+      limit: 20
+    });
+  });
+
+  // 工具条事件
+  table.on('tool(table)', function(obj){
+    const data = obj.data;
+    if(obj.event === 'edit'){
+      // 编辑弹窗
+      layer.open({
+        type:1,
+        title:'编辑 KV',
+        area:['700px','400px'],
+        content: document.getElementById('editTpl').innerHTML,
+        success: function(){
+          document.getElementById('edit-key').value = data.name;
+          document.getElementById('edit-value').value = data.value;
+        },
+        btn:['保存'],
+        yes: async function(){
+          const auth = getAuth();
+          const key = data.name;
+          const value = document.getElementById('edit-value').value.trim();
+          if(!value)return layer.msg('value不能为空');
+
+          const res = await fetch(API,{
+            method:'POST',
+            headers:{'Content-Type':'application/json'},
+            body:JSON.stringify({key,value})
+          });
+          const d = await res.json();
+          if(d.success){
+            layer.msg('保存成功');
+            layer.closeAll();
+            form.submit('load');
+          }else{
+            layer.msg('保存失败');
+          }
+        }
+      });
+    }
+
+    if(obj.event === 'del'){
+      layer.confirm('确定删除？', async function(){
+        const auth = getAuth();
+        await fetch(`${API}?${auth}&key=${encodeURIComponent(data.name)}`,{method:'DELETE'});
+        layer.msg('删除成功');
+        form.submit('load');
+      });
+    }
+  });
+});
+</script>
+</body>
+</html>
