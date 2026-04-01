@@ -4,38 +4,36 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>KV 管理器</title>
-  <link rel="stylesheet" href="https://cdn.bootcdn.net/ajax/libs/layui/2.9.10/css/layui.css">
+  <link rel="stylesheet" href="https://cdn.staticfile.org/layui/2.9.10/css/layui.css">
 </head>
 <body class="layui-container" style="margin-top:30px">
 
 <div class="layui-card">
   <div class="layui-card-header">Cloudflare KV 配置</div>
   <div class="layui-card-body">
-    <form class="layui-form" lay-filter="config">
-      <div class="layui-form-item">
-        <div class="layui-inline">
-          <label class="layui-form-label">Account ID</label>
-          <div class="layui-input-inline">
-            <input type="text" id="accountId" class="layui-input">
-          </div>
-        </div>
-        <div class="layui-inline">
-          <label class="layui-form-label">API Token</label>
-          <div class="layui-input-inline">
-            <input type="text" id="apiToken" class="layui-input">
-          </div>
-        </div>
-        <div class="layui-inline">
-          <label class="layui-form-label">Namespace ID</label>
-          <div class="layui-input-inline">
-            <input type="text" id="namespaceId" class="layui-input">
-          </div>
-        </div>
-        <div class="layui-inline">
-          <button class="layui-btn" lay-submit lay-filter="load">加载列表</button>
+    <div class="layui-form-item">
+      <div class="layui-inline">
+        <label class="layui-form-label">Account ID</label>
+        <div class="layui-input-inline">
+          <input type="text" id="accountId" class="layui-input">
         </div>
       </div>
-    </form>
+      <div class="layui-inline">
+        <label class="layui-form-label">API Token</label>
+        <div class="layui-input-inline">
+          <input type="text" id="apiToken" class="layui-input">
+        </div>
+      </div>
+      <div class="layui-inline">
+        <label class="layui-form-label">Namespace ID</label>
+        <div class="layui-input-inline">
+          <input type="text" id="namespaceId" class="layui-input">
+        </div>
+      </div>
+      <div class="layui-inline">
+        <button class="layui-btn" id="loadBtn">加载列表</button>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -46,7 +44,7 @@
 </div>
 
 <script type="text/html" id="editTpl">
-  <div class="layui-form" style="padding:20px">
+  <div style="padding:25px">
     <div class="layui-form-item">
       <label class="layui-form-label">Key</label>
       <div class="layui-input-block">
@@ -62,58 +60,43 @@
   </div>
 </script>
 
-<script src="https://cdn.bootcdn.net/ajax/libs/layui/2.9.10/layui.js"></script>
+<script src="https://cdn.staticfile.org/layui/2.9.10/layui.js"></script>
 <script>
-layui.use(['table','layer','form'], function(){
+layui.use(["table", "layer"], function () {
   const table = layui.table;
   const layer = layui.layer;
-  const form = layui.form;
-  const API = '/api/kv';
+  const API = "/api/kv";
 
-  // 获取认证参数
-  function getAuth() {
-    const a = document.getElementById('accountId').value.trim();
-    const t = document.getElementById('apiToken').value.trim();
-    const n = document.getElementById('namespaceId').value.trim();
-    if (!a || !t || !n) {
-      layer.msg('请填写完整配置');
-      return null;
-    }
-    return `accountId=${encodeURIComponent(a)}&apiToken=${encodeURIComponent(t)}&namespaceId=${encodeURIComponent(n)}`;
-  }
+  // 绑定按钮（彻底解决无响应）
+  document.getElementById("loadBtn").addEventListener("click", async () => {
+    const a = document.getElementById("accountId").value.trim();
+    const t = document.getElementById("apiToken").value.trim();
+    const n = document.getElementById("namespaceId").value.trim();
 
-  // 加载列表（修复版）
-  form.on('submit(load)', async function (opt) {
-    opt.preventDefault();
-    const auth = getAuth();
-    if (!auth) return;
+    if (!a || !t || !n) return layer.msg("请填写完整配置");
+    const auth = `accountId=${a}&apiToken=${t}&namespaceId=${n}`;
 
     layer.load(2);
     try {
       const res = await fetch(`${API}?${auth}`);
       const data = await res.json();
 
-      const rows = [];
-      for (const item of (data.result || [])) {
-        try {
-          const valRes = await fetch(`${API}?${auth}&key=${encodeURIComponent(item.name)}`);
-          const valData = await valRes.json();
-          rows.push({
-            name: item.name,
-            value: valData.value || ''
-          });
-        } catch (e) {}
+      const list = [];
+      for (const item of data.result || []) {
+        const vres = await fetch(`${API}?${auth}&key=${encodeURIComponent(item.name)}`);
+        const vdata = await vres.json();
+        list.push({ name: item.name, value: vdata.value || "" });
       }
 
       table.render({
-        elem: '#table',
-        data: rows,
+        elem: "#table",
+        data: list,
         limit: 20,
         cols: [[
-          { field: 'name', title: 'Key', minWidth: 200 },
-          { field: 'value', title: 'Value', minWidth: 450 },
+          { field: "name", title: "Key", minWidth: 220 },
+          { field: "value", title: "Value", minWidth: 480 },
           {
-            title: '操作', toolbar: `
+            title: "操作", toolbar: `
               <a class="layui-btn layui-btn-xs" lay-event="edit">编辑</a>
               <a class="layui-btn layui-btn-danger layui-btn-xs" lay-event="del">删除</a>
             `
@@ -121,58 +104,54 @@ layui.use(['table','layer','form'], function(){
         ]]
       });
 
+      layer.msg("加载成功");
     } catch (e) {
-      layer.msg('加载失败：' + e.message);
+      layer.msg("加载失败");
     }
-    layer.closeAll('loading');
+    layer.closeAll("loading");
   });
 
   // 编辑
-  table.on('tool(table)', function (obj) {
-    const data = obj.data;
-
-    if (obj.event === 'edit') {
+  table.on("tool(table)", function (obj) {
+    const d = obj.data;
+    if (obj.event === "edit") {
       layer.open({
-        type: 1,
-        title: '编辑 KV',
-        area: ['750px', '480px'],
-        content: document.getElementById('editTpl').innerHTML,
-        success: function () {
-          document.getElementById('edit-key').value = data.name;
-          document.getElementById('edit-value').value = data.value;
+        type: 1, title: "编辑 KV", area: ["760px", "460px"],
+        content: document.getElementById("editTpl").innerHTML,
+        success: () => {
+          document.getElementById("edit-key").value = d.name;
+          document.getElementById("edit-value").value = d.value;
         },
-        btn: ['保存'],
-        yes: async function (index) {
-          const auth = getAuth();
-          const key = data.name;
-          const value = document.getElementById('edit-value').value.trim();
-          if (!value) return layer.msg('Value 不能为空');
+        btn: ["保存"],
+        yes: async (idx) => {
+          const val = document.getElementById("edit-value").value.trim();
+          if (!val) return layer.msg("Value 不能为空");
 
           const res = await fetch(API, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ key, value })
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ key: d.name, value: val })
           });
-          const d = await res.json();
-
-          if (d.success) {
-            layer.msg('保存成功');
-            layer.close(index);
-            form.submit('load');
-          } else {
-            layer.msg('保存失败');
-          }
+          const ok = (await res.json()).success;
+          if (ok) {
+            layer.msg("保存成功");
+            layer.close(idx);
+            document.getElementById("loadBtn").click();
+          } else layer.msg("保存失败");
         }
       });
     }
 
     // 删除
-    if (obj.event === 'del') {
-      layer.confirm('确定删除？', async function () {
-        const auth = getAuth();
-        await fetch(`${API}?${auth}&key=${encodeURIComponent(data.name)}`, { method: 'DELETE' });
-        layer.msg('删除成功');
-        form.submit('load');
+    if (obj.event === "del") {
+      layer.confirm("确定删除？", async () => {
+        const a = document.getElementById("accountId").value;
+        const t = document.getElementById("apiToken").value;
+        const n = document.getElementById("namespaceId").value;
+        const auth = `accountId=${a}&apiToken=${t}&namespaceId=${n}`;
+        await fetch(`${API}?${auth}&key=${encodeURIComponent(d.name)}`, { method: "DELETE" });
+        layer.msg("删除成功");
+        document.getElementById("loadBtn").click();
       });
     }
   });
