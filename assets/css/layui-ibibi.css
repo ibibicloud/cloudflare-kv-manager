@@ -65,7 +65,7 @@
 .layui-table thead tr,.layui-table tbody tr:hover{background-color: #f3f3f3;}
 /*表格头部工具栏*/
 .layui-table-tool,.ibibi-table-tool{font-weight: bold;padding: 12px;}
-.layui-table-tool .layui-btn,.ibibi-table-tool .layui-btn{height: 36px;padding: 0 12px 0 8px;}
+.layui-table-tool .layui-btn,.ibibi-table-tool .layui-btn{height: 36px;padding: 0 12px 0 11px;}
 .layui-table-tool .layui-btn+.layui-btn{margin-left: 3px;}
 /*表格内部cell*/
 .layui-table-cell{padding: 5px;}
