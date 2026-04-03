@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+    <title>cloudflare - KV</title>
+    <link rel="icon" href="https://www.cloudflare.com/favicon.ico">
+    <link rel="stylesheet" href="https://gcore.jsdelivr.net/npm/layui@2.10.3/dist/css/layui.min.css">
+    <link rel="stylesheet" href="https://gcore.jsdelivr.net/npm/lucide-static@1.7.0/font/lucide.min.css">
+    <link rel="stylesheet" href="/assets/css/layui-ibibi.css">
+    <link rel="stylesheet" href="/assets/css/admin.css">
+    <script src="https://gcore.jsdelivr.net/npm/sweetalert@2.1.2/dist/sweetalert.min.js"></script>
+</head>
+<body class="response">
+
+<div class="ibibi-main">
+  <table id="data-list" lay-filter='data-list'></table>
+</div>
+
+<!-- 数据表格头部工具栏 -->
+<style>
+.layui-table-tool-temp{padding-right: 0;}
+.layui-input-wrap .layui-input-split~* .layui-input{padding-left: 40px;}
+
+.layui-table-tool-search{margin-left: 3px;}
+.layui-table-tool-search .layui-inline{margin-left: 3px;}
+.layui-table-tool-search #data-date{width: 140px;padding: 0 3px 0 44px;}
+.layui-table-tool-search .layui-form-select{width: 130px;}
+.layui-table-tool-search #data-value{width: 180px;}
+.layui-table-tool-type{margin-top: 12px;}
+.layui-table-tool-type .layui-form-select{width: 100%;}
+</style>
+<script type="text/html" id="tpl-toolbar">
+  <button type="button" class="layui-btn layui-btn-normal layui-btn-shadow" lay-event='add'>
+  <i class="icon-square-plus"></i>添加文章</button>
+  <button type="button" class="layui-btn layui-btn-danger layui-btn-shadow" lay-event='delete'>
+  <i class="icon-trash-2"></i>批量删除
+</button>
+  <button type="button" class="layui-btn layui-btn-view layui-btn-shadow" lay-event='refresh'>
+  <i class="icon-rotate-cw"></i>页面刷新
+</button>
+  <div class="layui-inline layui-table-tool-search">
+    <div class="layui-inline">
+  <div class="layui-input-wrap">
+    <div class="layui-input-prefix layui-input-split">
+      <i class="icon-calendar-days"></i>
+    </div>
+    <input class="layui-input" id="data-date" placeholder="请选择日期" autocomplete="off">
+  </div>
+</div>
+    <div class="layui-inline">
+  <div class="layui-input-wrap">
+    <div class="layui-input-prefix layui-input-split">
+      <i class="icon-list"></i>
+    </div>
+    <select id="data-field">
+      <option value="title">文章标题</option>
+      <option value="id">文章ID</option>
+    </select>
+  </div>
+</div>
+    <div class="layui-inline">
+  <input class="layui-input" id="data-value" placeholder="请输入搜索关键字" autocomplete="off" lay-affix="clear">
+</div>
+<div class="layui-inline" style="margin-left: 2px;">
+  <button class="layui-btn layui-btn-search layui-btn-shadow" lay-event='search'>
+    <i class="icon-search"></i>点击搜索
+  </button>
+</div>
+  </div>
+  <div class="layui-table-tool-type">
+  <select id="select-type" lay-filter="data-tid" lay-search="">
+    <option value="">请选择栏目（支持输入搜索）</option>
+        <option value="1" data-mid="1"
+        >1111111111111111112</option>
+        <option value="2" data-mid="2"
+        >22222</option>
+        <option value="3" data-mid="3"
+        >333333</option>
+      </select>
+</div>
+</script>
+
+<!-- 数据标题 -->
+<script type="text/html" id="tpl-cols-title">
+<b style="color: #363636;">
+  <a target="_blank" href="{{=d.preview}}">&nbsp;{{d.title}}</a>
+</b>
+</script>
+
+<!-- 数据表格列工具栏 -->
+<script type="text/html" id="tpl-cols-tool">
+  <button class="layui-btn layui-btn-normal layui-btn-shadow" lay-event="edit">修改</button>
+  <button class="layui-btn layui-btn-danger layui-btn-shadow" lay-event="delete">删除</button>
+</script>
+
+<script src="https://gcore.jsdelivr.net/npm/layui@2.10.3/dist/layui.min.js"></script>
+<script>
+layui.use( () => {
+  const { $, layer, table, form, dropdown, element, upload, laydate } = layui;
+
+  // 数据表格实例
+  var tableIns = table.render({
+    // 数据表格实例： 公共参数
+elem: '#data-list'
+,url: 'json.html?tid='
+,toolbar: '#tpl-toolbar'
+,defaultToolbar: false
+,page: {theme: '#1e9fff', prev: '上一页', next: '下一页', first: '首页', last: '尾页'}
+,limit: 50
+,limits: [50, 100, 200]
+,height: 'full-32'
+    ,cols: [[
+      {type: 'checkbox', fixed: 'left', width: 36}
+,{field: 'id', title: 'ID', width: 80, align: 'center', sort: true, templet: '<b style="color: #28a745;">{{=d.id}}</b>'}
+      ,{field: 'title', title: '&nbsp;文章标题', templet: '#tpl-cols-title'}
+      ,{field: 'click', title: '点击', width: 80, align: 'center', sort: true, templet: '<b style="color: #2db94d;">{{=d.click}}</b>'}
+      ,{field: 'create_time', title: '添加时间', width: 180, align: 'center', sort: true, templet: '<b style="color: #727cf5;">{{=d.create_time}}</b>'}
+      ,{field: 'update_time', title: '更新时间', width: 180, align: 'center', sort: true, templet: '<b style="color: #f56c6c;">{{=d.update_time}}</b>'}
+      ,{title: '数据操作', width: 110, align: 'center', fixed: 'right', templet:'#tpl-cols-tool'}
+    ]]
+    ,done: () => {
+      // 数据表格头部工具栏事件
+      /**
+ * 数据表格头部工具栏事件
+ * 
+ * 添加 必须携带 tid
+ * 搜索 必须携带 tid
+ */
+table.on('toolbar(data-list)', (obj) => {
+    var checkStatus = table.checkStatus(obj.config.id)
+    ,data = checkStatus.data
+    ,id = [];
+    switch (obj.event) {
+        // 事件： 添加
+        case 'add':
+            layer.open({
+                type: 2
+                ,title: '添加文章'
+                ,anim: 2
+                ,move: false
+
+                                ,content: ['edit.html?tid=']
+                                // 数据模型通用: 大屏layer层
+                ,offset: ['80px', '15px']
+                ,area: ['800px', $(window).height() - 95 + 'px']
+                                
+                ,cancel: () => {
+                    tableIns.reloadData('data-list', {}, true);
+                }
+            });
+        break;
+        // 事件： 批量删除
+        case 'delete':
+            if (data.length > 0) {
+                for (var i in data) {
+                    id.push(data[i].id);
+                }
+                // console.log(JSON.stringify(id));
+                swal({
+                    icon: 'warning'
+                    ,title: '确认要删除此文章?'
+                    ,buttons: true
+                    ,dangerMode: true
+                }).then((del) => {
+                    if (del) {
+                        $.get('delete.html', {id: id.join(',')}, (res) => {
+                            if ( res.success ) {
+                                swal({icon: 'success', title: res.message});
+                                tableIns.reloadData('data-list', {}, true);
+                            } else {
+                                swal({icon: 'error', text: res.message});
+                            }
+                        })
+                    }
+                });
+            }else{
+                layer.msg('<b>请选择需要删除的文章！</b>');
+            }
+        break;
+        // 事件： 刷新
+        case 'refresh':
+            window.location.reload();
+        break;
+        // 事件： 搜索
+        case 'search':
+            var field = $('#data-field').val()
+            ,value = $('#data-value').val()
+            ,date = $('#data-date').val()
+            if ( value || date ) {
+                tableIns.reload({
+                    url: 'json.html?tid='
+                    ,where: {field: field, value: value, date: date}
+                    ,done: () => {
+                        $('#data-field').val(field);
+                        $('#data-value').val(value);
+                        $('#data-date').val(date);
+                        // form.render();
+                        laydate.render({elem: '#data-date'});
+                    }
+                }); 
+            } else {
+                layer.msg('<b>请选择搜索条件</b>');
+            }
+        break;
+    };
+});
+      // 数据表格列工具栏事件: 日期筛选
+      // 数据表格列工具栏事件： 日期筛选
+var dateIns = laydate.render({
+  elem: '#data-date'
+  ,type: 'date'
+  ,format: 'yyyy-MM-dd'
+  ,zIndex: 99999999
+});
+      // 数据表格列工具栏事件: 栏目下拉跳转
+      // 数据表格列工具栏事件: 栏目下拉跳转
+form.on('select(data-tid)', (data) => {
+  var nid = data.elem[data.elem.selectedIndex].getAttribute('data-nid');
+  if ( data.value == 0 ) {
+    layer.msg('请选择栏目');
+    return false;
+  } else {
+    window.location.href = '/admin/type/redirect.html?tid=' + data.value;
+  }
+});
+      // 数据表格列工具栏事件
+      /**
+ * 数据表格列工具栏事件
+ */
+table.on('tool(data-list)', (obj) => {
+    var data = obj.data;
+    switch (obj.event) {
+      // 事件： 数据编辑
+      case 'edit':
+        layer.open({
+          type: 2
+          ,title: '修改文章'
+                ,anim: 2
+                ,move: false
+                ,content: ['edit.html?id=' + data.id]
+
+                                // 数据模型通用: 大屏layer层
+                ,offset: ['80px', $(window).width() - 800 -15 + 'px']
+          ,area: ['800px', $(window).height() - 95 + 'px']
+                
+          ,cancel: () => {
+            tableIns.reloadData('data-list', {}, true);
+          }
+        });
+      break;
+      // 事件： 数据删除
+        case 'delete':
+            swal({
+                icon: 'warning'
+                ,title: '确认要删除此文章?'
+                ,buttons: true
+                ,dangerMode: true
+            }).then((del) => {
+                if (del) {
+                    $.get('delete.html?id=' + data.id, (res) => {
+                        if ( res.success ) {
+                            swal({icon: 'success', title: res.message});
+                            tableIns.reloadData('data-list', {}, true);
+                        } else {
+                            swal({icon: 'error', text: res.message});
+                        }
+                    })
+                }
+            });
+        break;
+        // 事件： 查看
+        case 'view':
+            layer.open({
+                type: 2
+                ,title: '查看文章数据'
+                ,content: ['view.html?id=' + data.id]
+                ,area: ['600px', '500px']
+                ,anim: 2
+                ,move: false
+                ,cancel: () => {
+                    // tableIns.reload();
+                }
+            });
+        break;
+    }
+});
+    }
+  });
+
+})
+</script>
+</body>
+</html>

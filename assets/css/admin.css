@@ -1,0 +1,58 @@
+
+/*https://www.googlefonts.cn*/
+@import url('https://fonts.font.im/css?family=Source+Code+Pro');
+body{font-family: -apple-system,"Source Code Pro","PingFang SC","Microsoft YaHei New",微软雅黑,"Microsoft Yahei","Microsoft JhengHei",宋体,SimSun,"Helvetica Neue",Helvetica,Arial,sans-serif;font-size: 14px;line-height: 1.5;color: #6F7479;}
+
+/*WebKit 内核浏览器（Chrome、Safari 等 滚动条*/
+body::-webkit-scrollbar{width: 5px;height: 1px;}
+body::-webkit-scrollbar-thumb{box-shadow: inset 0 0 3px rgba(0, 0, 0, 0.2);background: #888;}
+body::-webkit-scrollbar-track{box-shadow: inset 0 0 3px rgba(0, 0, 0, 0.2);background: #ededed;}
+/*Firefox 浏览器*/
+
+/*css全局变量*/
+:root{--ibibi-border-color: #161823;--ibibi-aside-width: 180px;--ibibi-nav-height: 72px;}
+
+/*框架主体*/
+aside,nav,main{position: fixed;}
+aside,nav{font-weight: bold;}
+aside{top: 0;bottom: 0;left: 0;width: var(--ibibi-aside-width);border-right: 1px solid var(--ibibi-border-color);background-color: #2c2e30;overflow-y: auto;}
+nav{top: 0;right: 0;left: calc(var(--ibibi-aside-width) + 1px);height: var(--ibibi-nav-height);border-bottom: 1px solid var(--ibibi-border-color);z-index: 9999;}
+main{top: calc(var(--ibibi-nav-height) + 1px);right: 0;bottom: 0;left: calc(var(--ibibi-aside-width) + 1px);overflow-y: auto;}
+i[class^="icon"]{font-weight: normal;font-size: 16px;margin: 2px 5px 0 0;}
+
+/*主体框架-伸缩*/
+.ibibi-shrink aside{width: 0;}
+.ibibi-shrink aside .layui-btn span{display: none;}
+.ibibi-shrink nav{left: 0;}
+.ibibi-shrink main{left: 0;}
+
+.response{box-sizing: border-box;}
+
+/*ibibi-logo*/
+.ibibi-logo{display: flex;min-height: 72px;align-items: center;justify-content: center;font-size: 26px;color: #ccc;}
+.ibibi-logo img{width: calc(var(--ibibi-aside-width) - 40px);margin: 20px;}
+/*ibibi-aside*/
+.ibibi-aside{padding: 0 11px 0 12px;}
+.ibibi-aside .layui-btn{width: 100%;height: 40px;margin: 0 0 12px 0;color: #d3d3d3;background-color: #38393e;}
+.ibibi-aside .layui-btn:hover,.ibibi-aside .layui-btn.active,.ibibi-nav .layui-btn:hover,.ibibi-nav .layui-btn.active{color: #fff;background-color: #5c667a;}
+/*ibibi-nav*/
+.ibibi-nav{display: flex;height: 100%;align-items: center;padding: 0 15px;background-color: #2c2e30;}
+.ibibi-nav .layui-btn{height: 40px;color: #d3d3d3;background-color: #38393e;}
+.ibibi-nav #toggleShrink i{margin: 0;}
+nav .layui-nav{display: flex;height: 100%;align-items: center;background-color: transparent;}
+/*ibibi-main*/
+main iframe{display: block;width: 100%;height: 100%;border: none;}
+.ibibi-main{padding: 15px;}
+
+/*sweetAlert样式*/
+.swal-modal{width: 300px;padding: 0 0 15px 0;}
+.swal-title{padding: 0 16px 13px 16px;}
+.swal-footer{text-align: center;margin-top: 0;}
+.swal-button{
+    /*padding: 7px 19px;
+    border-radius: 2px;
+    background-color: #4962B3;
+    font-size: 12px;
+    border: 1px solid #3e549a;
+    text-shadow: 0px -1px 0px rgba(0, 0, 0, 0.3);*/
+}
