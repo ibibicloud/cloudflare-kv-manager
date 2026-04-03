@@ -2,12 +2,11 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
-  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
     <title>cloudflare</title>
     <link rel="icon" href="https://www.cloudflare.com/favicon.ico">
     <link rel="stylesheet" href="https://gcore.jsdelivr.net/npm/layui@2.10.3/dist/css/layui.min.css">
-    <link rel="stylesheet" href="https://gcore.jsdelivr.net/npm/lucide-static@1.7.0/font/lucide.min.css">
     <link rel="stylesheet" href="/assets/css/layui-ibibi.css">
     <link rel="stylesheet" href="/assets/css/admin.css">
     <script src="https://gcore.jsdelivr.net/npm/sweetalert@2.1.2/dist/sweetalert.min.js"></script>
@@ -16,48 +15,45 @@
 
 <!-- 后台主体框架左侧 -->
 <aside>
-  <div class="ibibi-logo">后台管理</div>
-  <div class="ibibi-aside">
-    <!-- <a class="layui-btn" data-url="/admin/admin/board.html">后台面板</a> -->
-    <a class="layui-btn" data-url="/index.html"><i class="icon-goal"></i>广告素材</a>
-    <a class="layui-btn" data-url="/index.html"><i class="icon-square-arrow-out-up-right"></i>友情链接</a>
-        <a class="layui-btn" data-url="/index.html"><i class="icon-goal"></i>广告素材</a>
-        <a class="layui-btn" data-url="/index.html"><i class="icon-square-arrow-out-up-right"></i>友情链接</a>
-  </div>
+    <div class="ibibi-logo">cloudflare</div>
+    <div class="ibibi-aside">
+        <a class="layui-btn" data-url="/board.html">主页面板</a>
+        <a class="layui-btn" data-url="/kv.html">workers KV</a>
+        <a class="layui-btn" data-url="/kv.html">R2 对象存储</a>
+    </div>
 </aside>
 <!-- 后台主体框架头部 -->
 <nav>
-  <div class="ibibi-nav">
-    <a class="layui-btn" id="toggleShrink"><i class="icon-square-chevron-left"></i></a>
-    <a class="layui-btn" data-url="/index.html"><i class="icon-layout-list"></i>栏目管理</a>
-    <a class="layui-btn" data-url="/index.html"><i class="icon-notebook-text"></i>文章管理</a>
-    <a class="layui-btn" data-url="/index.html"><i class="icon-scan-barcode"></i>产品管理</a>
-    <a class="layui-btn" data-url="/index.html"><i class="icon-route"></i>接口管理</a>
-  </div>
+    <div class="ibibi-nav">
+        <a class="layui-btn" id="toggleShrink"><i class="icon-square-chevron-left"></i></a>
+        <a class="layui-btn" data-url="/kv.html">预留键位</a>
+        <a class="layui-btn" data-url="/kv.html">预留键位</a>
+        <a class="layui-btn" data-url="/kv.html">预留键位</a>
+    </div>
 </nav>
 <!-- 后台主体框架右侧 -->
 <main>
-  <iframe src="/kv.html"></iframe>
+    <iframe src="/kv.html"></iframe>
 </main>
 
 <script src="https://gcore.jsdelivr.net/npm/layui@2.10.3/dist/layui.min.js"></script>
 <script>
 layui.use( () => {
-  const { $, layer, element } = layui;
+    const { $, layer, element } = layui;
 
-  // aside nav 超链接按钮 click 事件
-  $('aside a,nav a').click(function(){
-    if ( $(this).data('url') ) {
+    // aside nav 超链接按钮 click 事件
+    $('aside a,nav a').click(function(){
+        if ( $(this).data('url') ) {
             $(this).parent().hasClass('ibibi-aside') ? $('nav a').removeClass('active') : $('aside a').removeClass('active')
-      $(this).addClass('active').siblings().removeClass('active')
-      $('main iframe').attr({'src': $(this).data('url')})
-    }
-  })
+            $(this).addClass('active').siblings().removeClass('active')
+            $('main iframe').attr({'src': $(this).data('url')})
+        }
+    })
 
-  // aside 伸缩
+    // aside 伸缩
     $('#toggleShrink').click( () => {
-      $('body').toggleClass('ibibi-shrink')
-      $('.icon-square-chevron-left').toggleClass('icon-square-chevron-right')
+        $('body').toggleClass('ibibi-shrink')
+        $('.icon-square-chevron-left').toggleClass('icon-square-chevron-right')
     })
 
 })

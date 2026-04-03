@@ -2,20 +2,36 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
-  <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
     <title>cloudflare - KV</title>
     <link rel="icon" href="https://www.cloudflare.com/favicon.ico">
     <link rel="stylesheet" href="https://gcore.jsdelivr.net/npm/layui@2.10.3/dist/css/layui.min.css">
-    <link rel="stylesheet" href="https://gcore.jsdelivr.net/npm/lucide-static@1.7.0/font/lucide.min.css">
     <link rel="stylesheet" href="/assets/css/layui-ibibi.css">
     <link rel="stylesheet" href="/assets/css/admin.css">
     <script src="https://gcore.jsdelivr.net/npm/sweetalert@2.1.2/dist/sweetalert.min.js"></script>
 </head>
 <body class="response">
 
+<form class="layui-form layui-form-pane" autocomplete="off">
+    <div class="layui-form-item">
+        <div class="layui-form-label">账户ID</div>
+        <div class="layui-input-inline" style="width: 515px;">
+            <input type="text" name="accounts" class="layui-input">
+        </div>
+        <div class="layui-form-label">token</div>
+        <div class="layui-input-inline">
+            <input type="text" name="token" class="layui-input">
+        </div>
+        <div class="layui-input-inline">
+            <select name="namespace">
+                <option value="">请选择 namespace</option>
+            </select>
+        </div>
+    </div>
+</form>
 <div class="ibibi-main">
-  <table id="data-list" lay-filter='data-list'></table>
+    <table id="data-list" lay-filter='data-list'></table>
 </div>
 
 <!-- 数据表格头部工具栏 -->
@@ -32,67 +48,49 @@
 .layui-table-tool-type .layui-form-select{width: 100%;}
 </style>
 <script type="text/html" id="tpl-toolbar">
-  <button type="button" class="layui-btn layui-btn-normal layui-btn-shadow" lay-event='add'>
-  <i class="icon-square-plus"></i>添加文章</button>
-  <button type="button" class="layui-btn layui-btn-danger layui-btn-shadow" lay-event='delete'>
-  <i class="icon-trash-2"></i>批量删除
-</button>
-  <button type="button" class="layui-btn layui-btn-view layui-btn-shadow" lay-event='refresh'>
-  <i class="icon-rotate-cw"></i>页面刷新
-</button>
-  <div class="layui-inline layui-table-tool-search">
-    <div class="layui-inline">
-  <div class="layui-input-wrap">
-    <div class="layui-input-prefix layui-input-split">
-      <i class="icon-calendar-days"></i>
+    <button type="button" class="layui-btn layui-btn-normal layui-btn-shadow" lay-event='add'>添加键值</button>
+    <button type="button" class="layui-btn layui-btn-danger layui-btn-shadow" lay-event='delete'>批量删除</button>
+    <div class="layui-inline layui-table-tool-search">
+
+        <div class="layui-inline">
+            <div class="layui-input-wrap">
+                <div class="layui-input-prefix layui-input-split">
+                    <i class="icon-list"></i>
+                </div>
+                <select id="data-field">
+                    <option value="title">文章标题</option>
+                    <option value="id">文章ID</option>
+                </select>
+            </div>
+        </div>
+        <div class="layui-inline">
+            <input class="layui-input" id="data-value" placeholder="请输入搜索关键字" autocomplete="off" lay-affix="clear">
+        </div>
+        <div class="layui-inline" style="margin-left: 2px;">
+            <button class="layui-btn layui-btn-search layui-btn-shadow" lay-event='search'>
+                <i class="icon-search"></i>点击搜索
+            </button>
+        </div>
+        <div class="layui-table-tool-type">
+            <select id="select-type" lay-filter="data-tid" lay-search="">
+                <option value="">请选择栏目（支持输入搜索）</option>
+                <option value="1" data-mid="1">1111111111111111112</option>
+            </select>
+        </div>
     </div>
-    <input class="layui-input" id="data-date" placeholder="请选择日期" autocomplete="off">
-  </div>
-</div>
-    <div class="layui-inline">
-  <div class="layui-input-wrap">
-    <div class="layui-input-prefix layui-input-split">
-      <i class="icon-list"></i>
-    </div>
-    <select id="data-field">
-      <option value="title">文章标题</option>
-      <option value="id">文章ID</option>
-    </select>
-  </div>
-</div>
-    <div class="layui-inline">
-  <input class="layui-input" id="data-value" placeholder="请输入搜索关键字" autocomplete="off" lay-affix="clear">
-</div>
-<div class="layui-inline" style="margin-left: 2px;">
-  <button class="layui-btn layui-btn-search layui-btn-shadow" lay-event='search'>
-    <i class="icon-search"></i>点击搜索
-  </button>
-</div>
-  </div>
-  <div class="layui-table-tool-type">
-  <select id="select-type" lay-filter="data-tid" lay-search="">
-    <option value="">请选择栏目（支持输入搜索）</option>
-        <option value="1" data-mid="1"
-        >1111111111111111112</option>
-        <option value="2" data-mid="2"
-        >22222</option>
-        <option value="3" data-mid="3"
-        >333333</option>
-      </select>
-</div>
 </script>
 
 <!-- 数据标题 -->
 <script type="text/html" id="tpl-cols-title">
-<b style="color: #363636;">
-  <a target="_blank" href="{{=d.preview}}">&nbsp;{{d.title}}</a>
-</b>
+    <b style="color: #363636;">
+        <a target="_blank" href="{{=d.preview}}">&nbsp;{{d.title}}</a>
+    </b>
 </script>
 
 <!-- 数据表格列工具栏 -->
 <script type="text/html" id="tpl-cols-tool">
-  <button class="layui-btn layui-btn-normal layui-btn-shadow" lay-event="edit">修改</button>
-  <button class="layui-btn layui-btn-danger layui-btn-shadow" lay-event="delete">删除</button>
+    <button class="layui-btn layui-btn-normal layui-btn-shadow" lay-event="edit">修改</button>
+    <button class="layui-btn layui-btn-danger layui-btn-shadow" lay-event="delete">删除</button>
 </script>
 
 <script src="https://gcore.jsdelivr.net/npm/layui@2.10.3/dist/layui.min.js"></script>
